@@ -1,26 +1,30 @@
 name: vs2026-ci
 
 on:
-  push:
-    branches:
-      - '**' # matches all branch names, including ones with slashes 
-    tags:
-      - 'v*'
-    paths-ignore:
-      - '.gitignore'
-      - '.gitattributes'
-      - '**.cmd'
-      - '**.bat'
-      - '**.md'
+  workflow_dispatch:
 
-  pull_request:
-    paths-ignore:
-      - '.gitignore'
-      - '.gitattributes'
-      - '**.cmd'
-      - '**.bat'
-      - '**.md'
-      
+# Disabled in this fork, releases use release.yml. Uncomment the below lines and remove the above lines to activate
+# on:
+#   push:
+#     branches:
+#       - '**' # matches all branch names, including ones with slashes
+#     tags:
+#       - 'v*'
+#     paths-ignore:
+#       - '.gitignore'
+#       - '.gitattributes'
+#       - '**.cmd'
+#       - '**.bat'
+#       - '**.md'
+#
+#   pull_request:
+#     paths-ignore:
+#       - '.gitignore'
+#       - '.gitattributes'
+#       - '**.cmd'
+#       - '**.bat'
+#       - '**.md'
+
 env:
   SOLUTION_FILE_PATH: ./hyperdbg/hyperdbg.sln
   RELEASE_ZIP_FILE_NAME: hyperdbg
