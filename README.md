@@ -50,14 +50,14 @@ Clone this repository with the `--recursive` flag.
 ```
 git clone --recursive https://github.com/lava1879/HyperDbg.git
 ```
-Build and install **HyperDbg** as described in **[Build & Install](https://docs.hyperdbg.org/getting-started/build-and-install)**, and use the same build on both computers.
+Build and install **HyperDbg** as described in **[Build & Install](https://docs.hyperdbg.org/getting-started/build-and-install)**, and use the same build on both computers. You can also download a prebuilt package from **[Releases](https://github.com/lava1879/HyperDbg/releases)**.
 
 ### Install the WinUSB driver on the debugger
 
 The debugger needs the WinUSB driver package for the debug device, which you only need to install once.
 
 1. Open **PowerShell** as administrator.
-2. Go to the root folder of this repository, which contains `hyperdbg-usb.inf` and `hyperdbg-usb-install.ps1`.
+2. Go to the HyperDbg folder that contains `hyperdbg-usb.inf` and `hyperdbg-usb-install.ps1`. Both files are in the root folder of this repository, the build folder (`hyperdbg\build\bin\release`), and the release package.
 3. Run:
    ```
    Set-ExecutionPolicy -Scope Process Bypass
@@ -193,7 +193,7 @@ Run `.debug remote usb` on the debugger, and then run `.debug prepare usb` on th
 
 ```
 err, WinUSB is not set for the USB debug device: <error name>, <error code>.
-Run hyperdbg-usb-install.ps1 from the HyperDbg source folder.
+Run hyperdbg-usb-install.ps1 from the HyperDbg folder.
 ```
 The WinUSB driver is not installed for the debug device. Install it as described in **[Install the WinUSB driver on the debugger](#install-the-winusb-driver-on-the-debugger)**, and then unplug and reconnect the cable.
 
