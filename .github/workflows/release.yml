@@ -1,0 +1,102 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag'
+        required: true
+        default: 'v0.25.1-usb'
+      draft:
+        description: 'Create the release as a draft'
+        type: boolean
+        default: false
+
+env:
+  SOLUTION_FILE_PATH: ./hyperdbg/hyperdbg.sln
+  RELEASE_ZIP_FILE_NAME: hyperdbg
+  BUILD_BIN_DIR: ./hyperdbg/build/bin/
+
+jobs:
+  win-amd64-build:
+    runs-on: windows-2025-vs2026
+    strategy:
+      matrix:
+        BUILD_CONFIGURATION: [release, debug]
+        PLATFORM: [x64]
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        submodules: recursive
+
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v3
+
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v2
+
+    - name: Restore NuGet packages
+      run: nuget restore ${{ env.SOLUTION_FILE_PATH }}
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+
+    - name: Update vcxproj files
+      run: python utils/replace-sdk-wdk.py
+
+    - name: Build HyperDbg solution
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: msbuild /m /p:Configuration=${{matrix.BUILD_CONFIGURATION}} /p:Platform=${{matrix.PLATFORM}} ${{env.SOLUTION_FILE_PATH}}
+
+    - name: Check USB driver files
+      run: |
+        foreach ($File in 'hyperdbg-usb.inf', 'hyperdbg-usb-install.ps1') {
+          if (-not (Test-Path "${{ env.BUILD_BIN_DIR }}${{matrix.BUILD_CONFIGURATION}}/$File")) { throw "missing $File" }
+        }
+
+    - name: Upload build directory
+      uses: actions/upload-artifact@v4.4.0
+      with:
+        name: build_files_${{matrix.BUILD_CONFIGURATION}}
+        path: ${{ env.BUILD_BIN_DIR }}
+
+  deploy-release:
+    name: Deploy release
+    needs: win-amd64-build
+    runs-on: windows-2025-vs2026
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout release notes
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/release-notes.md
+          sparse-checkout-cone-mode: false
+
+      - name: Download build files from "build" job
+        uses: actions/download-artifact@v4.1.7
+        with:
+          name: build_files_release
+          path: ${{ env.BUILD_BIN_DIR }}
+
+      - name: Archive release
+        uses: thedoctor0/zip-release@master
+        with:
+          path: ${{ env.BUILD_BIN_DIR }}release/
+          type: 'zip'
+          filename: ${{env.RELEASE_ZIP_FILE_NAME}}-${{ inputs.tag }}.zip
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag }}
+          name: ${{ inputs.tag }}
+          target_commitish: ${{ github.sha }}
+          body_path: .github/release-notes.md
+          draft: ${{ inputs.draft }}
+          files: |
+            ${{env.RELEASE_ZIP_FILE_NAME}}-${{ inputs.tag }}.zip
