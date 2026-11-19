@@ -1,209 +1,221 @@
+<div align="center">
+<img width="180" title="HyperDbg" alt="HyperDbg mascot" src="https://avatars.githubusercontent.com/u/65739646" />
+<h1>HyperDbg</h1>
+<p width="120">  A HyperDbg fork with support for debugging over a USB 3.0 cable using the Intel xHCI Debug Capability Interface (DBC) </p>
+</div>
+
+----
+
 <p align="left">
-<a href="https://hyperdbg.org"><img src="https://raw.githubusercontent.com/HyperDbg/graphics/master/Badges/Link-Website-orange.svg" alt="Website"></a>
 <a href="https://docs.hyperdbg.org"><img src="https://raw.githubusercontent.com/HyperDbg/graphics/master/Badges/Link-Docs-yellow.svg" alt="Documentation"></a>
-<a href="https://doxygen.hyperdbg.org"><img src="https://raw.githubusercontent.com/HyperDbg/graphics/master/Badges/Link-Doxygen-lightgreen.svg" alt="Doxygen"></a>
-<a href="https://research.hyperdbg.org"><img src="https://raw.githubusercontent.com/HyperDbg/graphics/master/Badges/Link-Research-pink.svg" alt="Published Academic Researches"></a>
 <a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://raw.githubusercontent.com/HyperDbg/graphics/master/Badges/License-GPLv3-blue.svg" alt="License"></a>
 </p>
 
-# HyperDbg Debugger
-
-<a href="https://hyperdbg.org/"><img align="right" width="150" height="150" src="https://github.com/HyperDbg/graphics/raw/master/Art%20Board/HyperDbg-Cat.Circle.Compressed.png" alt="HyperDbg Debugger"></a></br>
-**HyperDbg Debugger** is an open-source, hypervisor-assisted debugger for **Windows** (**Linux** support is currently under development!) with support for both user-mode and kernel-mode (native) debugging. It is built for reverse engineering, fuzzing, and advanced system analysis using modern hardware virtualization and tracing features.
-
-You can follow **HyperDbg** on **[Twitter](https://twitter.com/HyperDbg)** or **[Mastodon](https://infosec.exchange/@hyperdbg)** to get notified about new releases, or join any of the HyperDbg groups, where you can ask developers and open-source reversing enthusiasts for help setting up and using HyperDbg.
-
-- **[Telegram](https://t.me/HyperDbg)**
-- **[Discord](https://discord.gg/anSPsGUtzN)**
-- **[Matrix](https://matrix.to/#/#hyperdbg-discussion:matrix.org)**
-
 ## Description
 
-**HyperDbg** is built around modern hardware virtualization technologies to introduce capabilities beyond those of traditional debuggers. It runs on top of the operating system by virtualizing an already running system using Intel VT-x and Extended Page Tables (EPT). By combining virtualization with advanced tracing technologies such as Intel Processor Trace (Intel PT), **HyperDbg** provides powerful tracing and **V**irtual **M**achine **I**ntrospection (**VMI**) capabilities.
+**HyperDbg** is an open-source, hypervisor-assisted debugger for **Windows**. In the **Debugger Mode**, **HyperDbg** debugs a remote computer (the **debuggee**) from another computer (the **debugger**), which the original project connects over a serial cable or a named pipe.
 
-<p align="center"><a href="https://hyperdbg.org/"><img align="center" width="600" height="500" src="https://raw.githubusercontent.com/HyperDbg/graphics/master/Art%20Board/Artboard%201.png" alt="HyperDbg Debugger"></a></br></p>
+This fork adds a **USB 3.0** connection. On the debuggee, **HyperDbg** uses the **Debug Capability (DbC)** of the xHCI USB controller, the same hardware that Windows uses for USB 3.0 kernel debugging, and on the debugger, it uses Microsoft's **WinUSB** driver.
 
-### Core Capabilities
+<p align="center"><img align="center" width="640" src=".github/images/usb-connection.svg" alt="USB connection"></p>
 
-**HyperDbg** provides a wide range of advanced debugging features, including several types of [EPT-based hidden hooks](https://docs.hyperdbg.org/commands/extension-commands/epthook). It can emulate hardware data breakpoints for [monitoring memory](https://docs.hyperdbg.org/commands/extension-commands/monitor) reads, writes, and executions at specific address ranges while remaining transparent to both the operating system and target applications. Unlike [hardware debug registers](https://docs.hyperdbg.org/commands/extension-commands/dr), these monitoring facilities are not limited by the number of available debug registers or size constraints. Moreover, **HyperDbg** is capable of [tracking execution](https://docs.hyperdbg.org/commands/debugging-commands/i) across different privilege levels, including transitions from user mode to kernel mode (e.g., through system calls, heaven's gate, faults, [exceptions](https://docs.hyperdbg.org/commands/extension-commands/exception), and [interrupts](https://docs.hyperdbg.org/commands/extension-commands/interrupt)), from the kernel to device drivers, and from kernel mode back to user mode, enabling comprehensive analysis of the entire execution flow.
+For the general usage of **HyperDbg**, refer to the **[HyperDbg documentation](https://docs.hyperdbg.org)**.
 
-In addition, **HyperDbg** supports [system call hooking](https://docs.hyperdbg.org/commands/extension-commands/syscall), [control flow tracing](https://docs.hyperdbg.org/commands/extension-commands/pt) through hardware tracing features, and comprehensive monitoring of I/O operations, including both [Memory-Mapped I/O (MMIO)](https://docs.hyperdbg.org/commands/extension-commands/monitor) and [Port-Mapped I/O](https://docs.hyperdbg.org/commands/extension-commands/ioin) ([PMIO](https://docs.hyperdbg.org/commands/extension-commands/ioout)), enabling detailed analysis of device interactions and external peripherals.
+This fork also includes fixes for **HyperDbg** itself that are needed to debug a physical computer. They apply to both serial and USB connections and are available separately in the [hyperdbg-core-fixes](https://github.com/lava1879/HyperDbg/tree/hyperdbg-core-fixes) branch.
 
-Beyond that, **HyperDbg** includes a large collection of additional [events](https://docs.hyperdbg.org/commands/extension-commands) specifically designed for reverse engineering, malware analysis, and low-level program analysis. For a complete list of supported events and their documentation, refer to the [full feature list](https://github.com/HyperDbg/HyperDbg#unique-features).
+## Requirements
 
-**HyperDbg** is designed to operate as stealthily as possible. It does not use any debugging APIs to debug the operating system or any application, so classic anti-debugging methods will not detect it. It also includes a [specialized module](https://fosdem.org/2026/schedule/event/CDPRDX-invisible_hypervisors_debugging_with_hyperdbg/) designed to enhance its stealth capabilities. This module monitors attempts to detect the presence of a hypervisor or debugger and applies various techniques to first report and then mitigate or bypass such detection mechanisms. Although complete transparency cannot be guaranteed in all scenarios, these features significantly increase the difficulty of detecting **HyperDbg**, making it substantially harder for applications, packers, software protectors, malware, anti-cheat systems, and other security mechanisms to identify its presence.
+### Debugger
 
-### Why HyperDbg?
+- A computer that runs 64-bit **Windows**.
+- A USB 3.0 port on an xHCI host controller. The port on the debugger does not need to support debugging.
 
-HyperDbg is harder to set up and use, and also requires deeper low-level system knowledge compared to traditional debuggers. However, it provides two major advantages:
+### Debuggee
 
-1. **Full System & OS Control**  
-HyperDbg operates at the hypervisor level, giving you powerful capabilities that are simply not possible with classic debuggers. This allows you to leverage hardware-assisted [features](https://github.com/HyperDbg/HyperDbg?tab=readme-ov-file#unique-features) for advanced reverse engineering and debugging scenarios.
+- An Intel processor with **VT-x** and **EPT**, with VT-x enabled in the firmware (BIOS/UEFI).
+- An xHCI host controller that supports debugging, and a USB 3.0 port on that controller that is debug capable. Not every port on a host controller supports debugging, so check the ports as described in **[Find the debug port](#find-the-debug-port)**.
+- The usual **HyperDbg** requirements for the debuggee, as described in **[Build & Install](https://docs.hyperdbg.org/getting-started/build-and-install)**.
 
-2. **Stealth & Detection Resistance**  
-Since HyperDbg doesn't rely on standard OS debugging APIs, it is generally much harder (though not impossible) to detect. This makes it a strong choice when working against anti-debugging protections.
+### Cable
 
-These advantages open up entirely new debugging and reverse engineering techniques that go beyond what conventional debuggers can offer.
+An orange Microsoft USB debug cable is highly recommended. This is an A-A crossover cable that has two male type-A plugs and no Vbus connection, and it is available from vendors such as [DataPro - USB 3.0 Super-Speed A/A Debugging Cable](https://www.datapro.net/products/usb-3-0-super-speed-a-a-debugging-cable.html).
+
+However, I personally developed this fork using a [Meta Quest Link Cable](https://www.meta.com/quest/accessories/link-cable/), with a [UGREEN USB to USB C 3.2 10Gbps Type C to Type A Adapter](https://www.ugreen.com/en-au/products/au-45275) on the debugger's side.
+
+To simplify the troubleshooting, connect the cable directly between the debuggee and the debugger, avoiding any hubs or docking stations.
 
 ## Build & Installation
 
-You can download the latest compiled binary files from **[releases](https://github.com/HyperDbg/HyperDbg/releases)**; otherwise, if you want to build HyperDbg, you should clone HyperDbg with the `--recursive` flag.
+Clone this repository with the `--recursive` flag.
 ```
-git clone --recursive https://github.com/HyperDbg/HyperDbg.git
+git clone --recursive https://github.com/lava1879/HyperDbg.git
 ```
-Please visit **[Build & Install](https://docs.hyperdbg.org/getting-started/build-and-install)** and **[Quick Start](https://docs.hyperdbg.org/getting-started/quick-start)** for a detailed explanation of how to start with **HyperDbg**. You can also see the **[FAQ](https://docs.hyperdbg.org/getting-started/faq)** for more information, or if you previously used other native debuggers like GDB, LLDB, or WinDbg, you could see the [command map](https://hyperdbg.github.io/commands-map).
+Build and install **HyperDbg** as described in **[Build & Install](https://docs.hyperdbg.org/getting-started/build-and-install)**, and use the same build on both computers.
 
-## Tutorials
+### Install the WinUSB driver on the debugger
 
-The **OpenSecurityTraining2's "Reversing with HyperDbg (Dbg3301)**" tutorial series, available on [**OST2's website**](https://ost2.fyi/Dbg3301) (_preferred_) and [**YouTube**](https://www.youtube.com/playlist?list=PLUFkSN0XLZ-kF1f143wlw8ujlH2A45nZY) is the recommended way to get started with and learn HyperDbg. It guides you through the initial steps of using HyperDbg, covering essential concepts, principles, and debugging functionalities, along with practical examples and numerous reverse engineering methods that are unique to HyperDbg.
+The debugger needs the WinUSB driver package for the debug device, which you only need to install once.
 
-If you're interested in understanding the internal design and architecture of hypervisors and HyperDbg, you can read the [**Hypervisor From Scratch**](https://rayanfam.com/tutorials) tutorials.
+1. Open **PowerShell** as administrator.
+2. Go to the root folder of this repository, which contains `hyperdbg-usb.inf` and `hyperdbg-usb-install.ps1`.
+3. Run:
+   ```
+   Set-ExecutionPolicy -Scope Process Bypass
+   .\hyperdbg-usb-install.ps1
+   ```
 
-## Publications
-
-In case you use one of **HyperDbg**'s components in your work, please consider citing our papers.
-
-**1. [HyperDbg: Reinventing Hardware-Assisted Debugging (CCS'22)](https://dl.acm.org/doi/abs/10.1145/3548606.3560649)** [[arXiv](https://arxiv.org/abs/2207.05676)]
-
+To remove the driver package, run:
 ```
-@inproceedings{karvandi2022hyperdbg,
-  title={HyperDbg: Reinventing Hardware-Assisted Debugging},
-  author={Karvandi, Mohammad Sina and Gholamrezaei, MohammadHosein and Khalaj Monfared, Saleh and Meghdadizanjani, Soroush and Abbassi, Behrooz and Amini, Ali and Mortazavi, Reza and Gorgin, Saeid and Rahmati, Dara and Schwarz, Michael},
-  booktitle={Proceedings of the 2022 ACM SIGSAC Conference on Computer and Communications Security},
-  pages={1709--1723},
-  year={2022}
-}
-```
-<details>
-
-<summary><b>Other paper built upon HyperDbg...</b></summary>
-
-**2. [hwdbg: Debugging Hardware Like Software (EuroSec'25)](https://dl.acm.org/doi/abs/10.1145/3722041.3723101)** [[PDF](https://dl.acm.org/doi/pdf/10.1145/3722041.3723101)]
-
-```
-@inproceedings{karvandi2025hwdbg,
-  title={hwdbg: Debugging Hardware Like Software},
-  author={Karvandi, Mohammad Sina and Meghdadizanjani, Soroush and Monfared, Saleh Khalaj and van der Kouwe, Erik and Slowinska, Asia},
-  booktitle={Proceedings of the 18th European Workshop on Systems Security},
-  pages={56--62},
-  year={2025}
-}
+.\hyperdbg-usb-install.ps1 -Uninstall
 ```
 
-**3. [HyperEvade: Countering Anti-Debugging Techniques and Enhancing Transparency in Nested Virtualization using HyperDbg (DEBT'25)](https://www.jot.fm/contents/issue_2026_01/a8.html)** [[PDF](https://www.jot.fm/issues/issue_2026_01/a8.pdf)]
+## Prepare the debuggee
+
+### Find the debug port
+
+To find a port that supports debugging, use **USBView**, which is included in [Debugging Tools for Windows](https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/).
+
+1. On the debuggee, start **USBView**.
+2. In **USBView**, expand the nodes of the xHCI host controllers, and look for an indication that a port on the host controller supports debugging. A port that you can use shows **Is Port Debug Capable: yes** and **USB 3.0: yes**, as in the following example:
+   ```
+   [Port15]
+
+   Is Port User Connectable:         yes
+   Is Port Debug Capable:            yes
+   Companion Port Number:            2
+   Companion Hub Symbolic Link Name: USB#ROOT_HUB30#4&23178b3&0&0#{f18a0e88-c30c-11d0-8815-00a0c906bed8}
+   Protocols Supported:
+    USB 1.1:                         no
+    USB 2.0:                         no
+    USB 3.0:                         yes
+
+   ConnectionStatus:      NoDeviceConnected
+   ```
+3. Make a note of the port number. In this example, the port number is 15.
+4. To find the physical connector of that port, plug a USB 3.0 device, such as a flash drive, into a connector on the debuggee and refresh **USBView**. If the device appears under the port number from step 3, connect the cable to that connector. Otherwise, try another connector.
+
+Each physical connector has a USB 2.0 port and a USB 3.0 port, which **USBView** lists as companion ports. The debug connection always uses the USB 3.0 port.
+
+### Disable power management
+
+Windows can turn off an idle USB controller to save power, which drops the connection.
+
+1. On the debuggee, open **Device Manager**.
+2. Under **Universal Serial Bus controllers**, open the properties of the xHCI controller that has the debug port.
+3. On the **Power Management** tab, clear **Allow the computer to turn off this device to save power**.
+4. Do the same for the **USB Root Hub (USB 3.0)** of that controller.
+
+### Turn off Windows USB kernel debugging
+
+**HyperDbg** cannot use the debug port while Windows' own USB kernel debugger ([KDUSB](https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/setting-up-a-usb-3-0-debug-cable-connection) or [KDNET-USB](https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/setting-up-a-kdnet-usb-connection)) owns it. If you used one of them on the debuggee, open **Command Prompt** as administrator on the debuggee, run the following command, and then restart the debuggee:
+```
+bcdedit /debug off
+```
+
+## Starting a debugging session for the first time
+
+1. Connect the cable to a USB 3.0 port on the debugger and to the debug port on the debuggee.
+2. On the debugger, start **HyperDbg** and run the following command, or `.debug remote pause usb` to pause the debuggee as soon as it connects:
+   ```
+   HyperDbg> .debug remote usb
+   ```
+3. On the debuggee, start **HyperDbg** and run:
+   ```
+   HyperDbg> .debug prepare usb
+   ```
+   <img width="640" src=".github/images/debuggee-prepare.png" alt="The debuggee after .debug prepare usb">
+4. On the debugger, open **Device Manager**. Under **Universal Serial Bus devices**, you see **USB 3.0 Debug Cable**, and on its **Driver** tab, the **HyperDbg USB Debug** driver. If the device has a yellow mark, see **[Troubleshooting](#troubleshooting)**.
+
+When the connection is ready, the debugger shows the name of the debuggee's operating system:
+
+<img width="640" src=".github/images/debugger-connect.png" alt="The debugger after it connects to the debuggee">
+
+## Starting a debugging session
+
+After the first time, the WinUSB driver stays installed. Connect the cable, run `.debug remote usb` on the debugger, and run `.debug prepare usb` on the debuggee.
+
+You can start either computer first. If you start the debuggee first, it waits up to 60 seconds for the debugger and shows:
+```
+HyperDbg> .debug prepare usb
+is the debugger listening? retry handshaking with the debugger... (timeout: 5 seconds)
+```
+
+To end the session, run `.debug close` on the debugger. The debuggee unloads **HyperDbg**, and you can start a new session without restarting it.
+
+## Examples
+
+After the debugger connects, all **HyperDbg** commands work over the USB connection. The following example shows the registers of the paused debuggee and the disassembly of `nt!NtCreateFile`:
+
+<img width="640" src=".github/images/debugger-registers.png" alt="The r and u commands over USB">
+
+The following example sets a breakpoint on `nt!NtCreateFile`, continues the debuggee until the breakpoint is hit, and shows the call stack:
+
+<img width="640" src=".github/images/debugger-breakpoint.png" alt="A breakpoint and the k command over USB">
+
+## Commands
+
+| Computer | Command | Description |
+| --- | --- | --- |
+| Debugger | `.debug remote usb` | Connect to a debuggee over USB |
+| Debugger | `.debug remote pause usb` | Connect to a debuggee over USB and pause it |
+| Debuggee | `.debug prepare usb` | Prepare this computer to be debugged over USB |
+| Debugger | `.debug close` | Close the connection |
+
+For the rest of the `.debug` command, see **[.debug](https://docs.hyperdbg.org/commands/meta-commands/.debug)**.
+
+This fork also adds the USB connection to the **[SDK](https://docs.hyperdbg.org/using-hyperdbg/sdk)**:
+```c
+BOOLEAN hyperdbg_u_connect_remote_debugger_using_usb(BOOLEAN pause_after_connection);
+BOOLEAN hyperdbg_u_connect_current_debugger_using_usb();
+```
+
+## Troubleshooting
+
+### The debuggee shows "USB debugging is not ready"
 
 ```
-@article{ruytenberg2026hyperevade,
-  title={HyperEvade: Countering Anti-Debugging Techniques and Enhancing Transparency in Nested Virtualization using HyperDbg},
-  author={Ruytenberg, Bj{\"o}rn and Karvandi, Mohammad Sina},
-  journal={Journal of Object Technology},
-  volume={25},
-  number={1},
-  pages={1--3},
-  year={2026},
-  publisher={Association Internationale pour les Technologies Objets}
-}
+Err, USB debugging is not ready
+err, unable to read the USB handshake
 ```
+The debugger did not detect the debuggee over the cable. Make sure that the cable is connected to the debug port on the debuggee (see **[Find the debug port](#find-the-debug-port)**), that the cable and both ports support USB 3.0, and that Windows USB kernel debugging is off on the debuggee.
 
-**4. [Digital Hole: Bypassing Commercial Audio DRM Solutions with DReaMcatcher (EuroSys'26)](https://dl.acm.org/doi/abs/10.1145/3767295.3803583)** [[PDF](https://dl.acm.org/doi/pdf/10.1145/3767295.3803583)]
+If the debuggee has Intel **Direct Connect Interface (DCI)** enabled, turn it off in the firmware settings, since its USB mode uses the same debug hardware.
+
+### The debuggee shows "no USB reply"
 
 ```
-@inproceedings{ruytenberg2026digital,
-  title={Digital Hole: Bypassing Commercial Audio DRM Solutions with DReaMcatcher},
-  author={Ruytenberg, Bj{\"o}rn and Karvandi, Mohammad Sina and Bos, Herbert and van der Kouwe, Erik and Slowinska, Asia},
-  booktitle={Proceedings of the 21st European Conference on Computer Systems},
-  pages={484--496},
-  year={2026}
-}
+err, no USB reply in 60 seconds.
+Run '.debug remote usb' on the debugger. Then retry '.debug prepare usb'.
 ```
+Run `.debug remote usb` on the debugger, and then run `.debug prepare usb` on the debuggee again.
 
-**5. [TRM: An Efficient Hypervisor-Based Framework For Malware Analysis and Memory Reconstruction (AsiaCCS'26)](https://dl.acm.org/doi/10.1145/3779208.3785293)** [[PDF](https://dl.acm.org/doi/pdf/10.1145/3779208.3785293)]
+### The debugger shows "WinUSB is not set for the USB debug device"
 
 ```
-@inproceedings{karvandi2026trm,
-  title={TRM: An Efficient Hypervisor-Based Framework For Malware Analysis and Memory Reconstruction},
-  author={Karvandi, Mohammad Sina and Meghdadizanjani, Soroush and Arasteh, Sima and Monfared, Saleh Khalaj and Fallah, Mohammad K and Gorgin, Saeid and Lee, Jeong-A and Slowinska, Asia and van der Kouwe, Erik},
-  booktitle={Proceedings of the ACM Asia Conference on Computer and Communications Security},
-  pages={68--82},
-  year={2026}
-}
+err, WinUSB is not set for the USB debug device: <error name>, <error code>.
+Run hyperdbg-usb-install.ps1 from the HyperDbg source folder.
 ```
+The WinUSB driver is not installed for the debug device. Install it as described in **[Install the WinUSB driver on the debugger](#install-the-winusb-driver-on-the-debugger)**, and then unplug and reconnect the cable.
 
-</details>
+### The debugger shows "USB device not recognized"
 
-You can also read [this article](https://research.hyperdbg.org/debugger/kernel-debugger-design/) as it describes the overall architecture, technical difficulties, design decisions, and internals of HyperDbg Debugger, [this article](https://research.hyperdbg.org/vmm/transparency/) about our efforts on vm-exit transparency, [this article](https://research.hyperdbg.org/debugger/chasing-bugs/) about chasing bugs within hypervisors, and [this article](https://research.hyperdbg.org/debugger/gaining-insights/) about new reverse engineering techniques introduced in HyperDbg. More articles, posts, and resources are available at the **[awesome](https://github.com/HyperDbg/awesome)** repo, and in addition, the **[slides](https://github.com/HyperDbg/slides)** repo provides presentation slides for further reference.
+If Windows shows a **USB device not recognized** notification on the debugger when you connect the cable, or **Device Manager** shows **The USB device returned an invalid USB BOS descriptor** (Code 43), you are likely hitting a known USB 3.1 to USB 3.1 compatibility issue. This issue affects connections between a USB 3.1 controller on the debugger and an Intel Ice Lake or Tiger Lake USB 3.1 controller on the debuggee.
 
-## Unique Features
+To work around this issue, open **Command Prompt** as administrator on the debugger, run the following command, and then unplug and reconnect the cable:
+```
+reg add HKLM\SYSTEM\CurrentControlSet\Control\usbflags\0525127A0000 /v SkipBOSDescriptorQuery /t REG_DWORD /d 1 /f
+```
+For more information, see [USB device not recognized](https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/setting-up-a-usb-3-0-debug-cable-connection#usb-device-not-recognized).
 
-* Advanced Hypervisor-based Kernel Mode Debugger [<a href="https://docs.hyperdbg.org/using-hyperdbg/kernel-mode-debugging" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/getting-started/attach-to-hyperdbg/debug" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/getting-started/attach-to-hyperdbg/local-debugging" target="_blank">link</a>]
-* Classic EPT Hook (Hidden Breakpoint) [<a href="https://docs.hyperdbg.org/commands/extension-commands/epthook" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/design/features/vmm-module/design-of-epthook" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/using-hyperdbg/kernel-mode-debugging/examples/events/hooking-any-function" target="_blank">link</a>]
-* Inline EPT Hook (Inline Hook) [<a href="https://docs.hyperdbg.org/commands/extension-commands/epthook2" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/design/features/vmm-module/design-of-epthook2" target="_blank">link</a>]
-* Monitor Memory for R/W (Emulating Hardware Debug Registers Without Limitation) [<a href="https://docs.hyperdbg.org/commands/extension-commands/monitor" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/design/features/vmm-module/design-of-monitor" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/using-hyperdbg/kernel-mode-debugging/examples/events/monitoring-accesses-to-structures" target="_blank">link</a>]
-* SYSCALL Hook (Disable EFER & Handle #UD) [<a href="https://docs.hyperdbg.org/commands/extension-commands/syscall" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/design/features/vmm-module/design-of-syscall-and-sysret" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/using-hyperdbg/kernel-mode-debugging/examples/events/intercepting-all-syscalls" target="_blank">link</a>]
-* SYSRET Hook (Disable EFER & Handle #UD) [<a href="https://docs.hyperdbg.org/commands/extension-commands/sysret" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/design/features/vmm-module/design-of-syscall-and-sysret" target="_blank">link</a>]
-* CPUID Hook & Monitor [<a href="https://docs.hyperdbg.org/commands/extension-commands/cpuid" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/using-hyperdbg/kernel-mode-debugging/examples/events/triggering-special-instructions" target="_blank">link</a>]
-* RDMSR Hook & Monitor [<a href="https://docs.hyperdbg.org/commands/extension-commands/msrread" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/using-hyperdbg/kernel-mode-debugging/examples/events/identifying-system-behavior" target="_blank">link</a>]
-* WRMSR Hook & Monitor [<a href="https://docs.hyperdbg.org/commands/extension-commands/msrwrite" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/using-hyperdbg/kernel-mode-debugging/examples/events/identifying-system-behavior" target="_blank">link</a>]
-* RDTSC/RDTSCP Hook & Monitor [<a href="https://docs.hyperdbg.org/commands/extension-commands/tsc" target="_blank">link</a>]
-* RDPMC Hook & Monitor [<a href="https://docs.hyperdbg.org/commands/extension-commands/pmc" target="_blank">link</a>]
-* VMCALL Hook & Monitor [<a href="https://docs.hyperdbg.org/commands/extension-commands/vmcall" target="_blank">link</a>]
-* Debug Registers Hook & Monitor [<a href="https://docs.hyperdbg.org/commands/extension-commands/dr" target="_blank">link</a>]
-* I/O Port (IN Instruction) Hook & Monitor  [<a href="https://docs.hyperdbg.org/commands/extension-commands/ioin" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/using-hyperdbg/kernel-mode-debugging/examples/events/triggering-special-instructions" target="_blank">link</a>]
-* I/O Port (OUT Instruction) Hook & Monitor  [<a href="https://docs.hyperdbg.org/commands/extension-commands/ioout" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/using-hyperdbg/kernel-mode-debugging/examples/events/triggering-special-instructions" target="_blank">link</a>]
-* MMIO Monitor [<a href="https://docs.hyperdbg.org/commands/extension-commands/monitor" target="_blank">link</a>]
-* Exception (IDT < 32) Monitor [<a href="https://docs.hyperdbg.org/commands/extension-commands/exception" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/design/features/vmm-module/design-of-exception-and-interrupt" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/using-hyperdbg/kernel-mode-debugging/examples/events/identifying-system-behavior" target="_blank">link</a>]
-* External-Interrupt (IDT > 32) Monitor [<a href="https://docs.hyperdbg.org/commands/extension-commands/interrupt" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/design/features/vmm-module/design-of-exception-and-interrupt" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/using-hyperdbg/kernel-mode-debugging/examples/events/identifying-system-behavior" target="_blank">link</a>]
-* Running Automated Scripts [<a href="https://docs.hyperdbg.org/commands/scripting-language/debugger-script" target="_blank">link</a>]
-* Transparent-mode and Hyperevade Project (Anti-debugging and Anti-hypervisor Resistance) [<a href="https://docs.hyperdbg.org/tips-and-tricks/considerations/transparent-mode" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/commands/extension-commands/hide" target="_blank">link</a>][<a href="https://www.vusec.net/projects/hyperevade/" target="_blank">link</a>]
-* Running Custom Assembly in Both VMX-root, VMX non-root (Kernel & User) [<a href="https://docs.hyperdbg.org/using-hyperdbg/prerequisites/how-to-create-an-action" target="_blank">link</a>]
-* Checking for Custom Conditions [<a href="https://docs.hyperdbg.org/using-hyperdbg/prerequisites/how-to-create-a-condition" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/design/debugger-internals/conditions" target="_blank">link</a>]
-* Process-specific & Thread-specific Debugging [<a href="https://docs.hyperdbg.org/commands/meta-commands/.process" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/commands/meta-commands/.thread" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/using-hyperdbg/user-mode-debugging/examples/basics/switching-to-a-specific-process-or-thread" target="_blank">link</a>]
-* VMX-root Compatible Message Tracing [<a href="https://docs.hyperdbg.org/design/features/vmm-module/vmx-root-mode-compatible-message-tracing" target="_blank">link</a>]
-* Powerful Kernel Side Scripting Engine [<a href="https://docs.hyperdbg.org/commands/scripting-language" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/design/script-engine" target="_blank">link</a>]
-* Support To Symbols (Parsing PDB Files) [<a href="https://docs.hyperdbg.org/commands/meta-commands/.sympath" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/commands/meta-commands/.sym" target="_blank">link</a>]
-* Mapping Data To Symbols & Create Structures, Enums From PDB Files [<a href="https://docs.hyperdbg.org/commands/debugging-commands/dt" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/commands/debugging-commands/struct" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/using-hyperdbg/kernel-mode-debugging/examples/basics/mapping-data-and-create-structures-and-enums-from-symbols" target="_blank">link</a>]
-* Event Forwarding (#DFIR) [<a href="https://docs.hyperdbg.org/tips-and-tricks/misc/event-forwarding" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/commands/debugging-commands/output" target="_blank">link</a>]
-* Transparent Breakpoint Handler [<a href="https://docs.hyperdbg.org/commands/debugging-commands/bp" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/using-hyperdbg/kernel-mode-debugging/examples/basics/setting-breakpoints-and-stepping-instructions" target="_blank">link</a>]
-* Various Custom Scripts [<a href="https://github.com/HyperDbg/scripts" target="_blank">link</a>]
-* HyperDbg Software Development Kit (SDK) [<a href="https://docs.hyperdbg.org/using-hyperdbg/sdk" target="_blank">link</a>]
-* Event Short-circuiting [<a href="https://docs.hyperdbg.org/tips-and-tricks/misc/event-short-circuiting" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/commands/scripting-language/functions/events/event_sc" target="_blank">link</a>]
-* Tracking Records of Function Calls and Return Addresses [<a href="https://docs.hyperdbg.org/commands/extension-commands/track" target="_blank">link</a>]
-* Kernel-level Length Disassembler Engine (LDE) [<a href="https://docs.hyperdbg.org/commands/scripting-language/functions/diassembler/disassemble_len" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/commands/scripting-language/functions/diassembler/disassemble_len32" target="_blank">link</a>]
-* Memory Execution Monitor & Execution Blocking [<a href="https://docs.hyperdbg.org/commands/extension-commands/monitor" target="_blank">link</a>]
-* Custom Page-fault Injection [<a href="https://docs.hyperdbg.org/commands/meta-commands/.pagein" target="_blank">link</a>]
-* Different Event Calling Stages [<a href="https://docs.hyperdbg.org/tips-and-tricks/misc/event-calling-stage" target="_blank">link</a>]
-* Injecting Custom Interrupts/Exceptions/Faults [<a href="https://docs.hyperdbg.org/commands/scripting-language/functions/events/event_inject" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/commands/scripting-language/functions/events/event_inject_error_code" target="_blank">link</a>]
-* Instant Events in the Debugger Mode [<a href="https://docs.hyperdbg.org/tips-and-tricks/misc/instant-events" target="_blank">link</a>]
-* Detecting Kernel-to-user and User-to-kernel Transitions [<a href="https://docs.hyperdbg.org/commands/extension-commands/mode" target="_blank">link</a>]
-* Physical Memory Monitoring Hooks [<a href="https://docs.hyperdbg.org/commands/extension-commands/monitor" target="_blank">link</a>]
-* Enumerating PCI/PCI-e Devices [<a href="https://docs.hyperdbg.org/commands/extension-commands/pcitree" target="_blank">link</a>]
-* Interpreting and Dumping PCI/PCI-e Configuration Space (CAM) [<a href="https://docs.hyperdbg.org/commands/extension-commands/pcicam" target="_blank">link</a>]
-* Dumping IDT Entries, I/O APIC, and Local APIC in XAPIC and X2APIC Modes [<a href="https://docs.hyperdbg.org/commands/extension-commands/idt" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/commands/extension-commands/ioapic" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/commands/extension-commands/apic" target="_blank">link</a>]
-* Triggering and Counting System Management Mode (SMM) Interrupts (SMIs) [<a href="https://docs.hyperdbg.org/commands/extension-commands/smi" target="_blank">link</a>]
-* Attaching to the User-mode Process and Preventing Execution [<a href="https://docs.hyperdbg.org/commands/meta-commands/.attach" target="_blank">link</a>]
-* Intercepting Execution of XSETBV Instructions [<a href="https://docs.hyperdbg.org/commands/extension-commands/xsetbv" target="_blank">link</a>]
-* Writing Library Script Files [<a href="https://docs.hyperdbg.org/commands/scripting-language/casting-and-inclusion" target="_blank">link</a>]
-* Enhanced Portable Executable (PE) Parser [<a href="https://docs.hyperdbg.org/commands/meta-commands/.pe" target="_blank">link</a>]
-* Tracing Branches using Last Branch Record (LBR) [<a href="https://docs.hyperdbg.org/commands/extension-commands/lbr" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/commands/extension-commands/lbrdump" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/commands/scripting-language/functions/tracing/lbr/lbr_print" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/commands/scripting-language/functions/tracing/lbr/lbr_save" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/commands/scripting-language/functions/tracing/lbr/lbr_check" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/commands/scripting-language/functions/tracing/lbr/lbr_restore" target="_blank">link</a>][<a href="https://docs.hyperdbg.org/commands/scripting-language/functions/tracing/lbr/lbr_restore_by_filter" target="_blank">link</a>]
+### The port stops working after the debuggee restarts or hangs
 
-## How does it work?
-
-You can read about the internal design of HyperDbg and its features in the [documentation](https://docs.hyperdbg.org/design). Here's a top-level diagram that shows how HyperDbg works:
-</br>
-
-<p align="center"><a href="https://hyperdbg.org/"><img align="center" width="70%" height="100%" src="https://raw.githubusercontent.com/HyperDbg/graphics/master/Diagrams/Diagram-hq-v1/Diagram_v1.jpg" alt="HyperDbg Design"></a></br>
-</p>
-</br>
-
-## Scripts
-
-You can write your **[scripts](https://github.com/HyperDbg/scripts)** to automate your debugging journey. **HyperDbg** has a powerful, fast, and entirely kernel-side implemented [script engine](https://docs.hyperdbg.org/commands/scripting-language).
+Unplug the cable from the debugger and plug it back in.
 
 ## Contributing
 
-Contributing to HyperDbg is super appreciated. We have made a list of potential [tasks](https://github.com/HyperDbg/HyperDbg/blob/master/CONTRIBUTING.md#things-to-work-on) that you might be interested in contributing towards.
+Contributions to this fork are welcome.
 
-If you want to contribute to HyperDbg, please read the [Contribution Guide](https://github.com/HyperDbg/HyperDbg/blob/master/CONTRIBUTING.md).
+For contributions to the original **HyperDbg** project, please read its [Contribution Guide](https://github.com/HyperDbg/HyperDbg/blob/master/CONTRIBUTING.md).
 
 ## License
 
